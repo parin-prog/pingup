@@ -5,7 +5,7 @@ export const clerkWebhookHandler = async (req, res) => {
 	const payload = req.body;
 	const headers = req.headers;
 
-	const wh = new Webhook(process.env.CLERK_SECRET_KEY);
+	const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET_KEY);
 
 	let evt;
 	try {
