@@ -19,10 +19,10 @@ export const clerkWebhookHandler = async (req, res) => {
 
 	// USER CREATED
 	if (type === "user.created") {
-		const user = User.findById(data.id);
-
+		const user = await User.findById(data.id);
+		
+		let userName = data.username;
 		if (user) {
-			let userName = data.username;
 			userName = userName + Math.floor(Math.random() * 1000);
 		}
 
