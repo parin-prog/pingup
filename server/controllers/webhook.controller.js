@@ -16,47 +16,50 @@ export const clerkWebhookHandler = async (req, res) => {
 	}
 
 	const { type, data } = evt;
+	clg(type, data);
 
-	// USER CREATED
-	if (type === "user.created") {
-		const user = await User.findById(data.id);
-		
-		let userName = data.username;
-		if (user) {
-			userName = userName + Math.floor(Math.random() * 1000);
+	const { id, username, first_name, last_name,
+		email_addresses, image_url } = data;
+
+	let userName = username;
+
+	if (!userName) {
+		userName = email_addresses[0].email_address.split("@")[0];
+		userName += Math.floor(Math.random() * 1000);
+	}
+
+	const transformedData = {
+		_id: id,
+		email: email_addresses?.[0]?.email_address,
+		full_name: `${first_name} ${last_name}`,
+		username: userName,
+		profile_picture: image_url,
+	}
+
+	try {
+
+		// USER CREATED
+		if (type === "user.created") {
+			await User.create(transformedData);
+			return res.status(201).send("User created in MongoDB");
 		}
 
-		await User.create({
-			_id: data.id,
-			email: data.email_addresses?.[0]?.email_address,
-			first_name: data.first_name,
-			last_name: data.last_name,
-			username: userName,
-			profile_picture: data.image_url,
-		});
+		// USER UPDATED
+		if (type === "user.updated") {
+			const { _id, ...updateData } = transformedData;
+			await User.findOneAndUpdate({ _id: data.id }, { $set: updateData });
+			return res.status(200).send("User updated");
+		}
 
-		return res.status(201).send("User created in MongoDB");
+		// USER DELETED
+		if (type === "user.deleted") {
+			await User.findOneAndDelete({ _id: data.id });
+			return res.status(200).send("User deleted");
+		}
+
+		res.status(200).send("Webhook received");
+	} catch (dbErr) {
+		console.error("MongoDB error:", dbErr);
+		return res.status(500).send("Database operation failed");
 	}
-
-	// USER UPDATED
-	if (type === "user.updated") {
-		await User.findOneAndUpdate(
-			{ clerkId: data.id },
-			{
-				email: data.email_addresses?.[0]?.email_address,
-				firstName: data.first_name,
-				lastName: data.last_name,
-				image: data.image_url,
-			}
-		);
-		return res.status(200).send("User updated");
-	}
-
-	// USER DELETED
-	if (type === "user.deleted") {
-		await User.findOneAndDelete({ clerkId: data.id });
-		return res.status(200).send("User deleted");
-	}
-
-	res.status(200).send("Webhook received");
 };
