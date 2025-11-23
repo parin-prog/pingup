@@ -16,7 +16,7 @@ export const clerkWebhookHandler = async (req, res) => {
 	}
 
 	const { type, data } = evt;
-	clg(type, data);
+	console.log(type, data);
 
 	const { id, username, first_name, last_name,
 		email_addresses, image_url } = data;
